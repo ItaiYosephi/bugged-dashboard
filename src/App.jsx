@@ -44,17 +44,24 @@ function App() {
   const [tasks, setTasks] = useState(initialTasks)
   const [filter, setFilter] = useState('all')
 
-  // BUG 1: Filter not working - the filter logic is broken
+  // Get today's date string - calculate once and reuse
+  const getTodayString = () => {
+    return new Date().toISOString().split('T')[0]
+  }
+
+  const todayString = getTodayString()
+
+  // FIXED: Filter logic now works correctly
   const filteredTasks = tasks.filter(task => {
     if (filter === 'all') return true
     if (filter === 'completed') return task.completed
     if (filter === 'pending') return !task.completed
-    // BUG: This condition will never work because we're comparing wrong values
-    if (filter === 'due-today') return task.dueDate === 'today' // Should compare with actual today's date
+    // FIXED: Compare with actual today's date string
+    if (filter === 'due-today') return task.dueDate === todayString
     return true
   })
 
-  // BUG 2: Mark complete doesn't update UI - the function doesn't actually update state
+  // FIXED: Mark complete now updates UI properly
   const markComplete = async (taskId) => {
     // Mock API call that "works" in backend
     console.log(`Marking task ${taskId} as complete...`)
@@ -62,22 +69,18 @@ function App() {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500))
     
-    // BUG: This line is commented out, so the UI never updates
-    // setTasks(tasks.map(task => 
-    //   task.id === taskId ? { ...task, completed: !task.completed } : task
-    // ))
+    // FIXED: Uncommented to update the UI state
+    setTasks(tasks.map(task => 
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    ))
     
     console.log(`Task ${taskId} marked as complete in backend!`)
   }
 
-  // BUG 3: Error on hover - accessing undefined property
+  // FIXED: Handle hover without accessing undefined properties
   const handleTaskHover = (task) => {
-    // BUG: Trying to access a property that doesn't exist
-    console.log(`Hovering over task with category: ${task.category.name}`) // task.category is undefined
-  }
-
-  const getTodayString = () => {
-    return new Date().toISOString().split('T')[0]
+    // FIXED: Only log information that exists on the task
+    console.log(`Hovering over task: ${task.title} (Priority: ${task.priority})`)
   }
 
   const formatDate = (dateString) => {
@@ -86,7 +89,7 @@ function App() {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
     
-    if (dateString === getTodayString()) return 'Today'
+    if (dateString === todayString) return 'Today'
     if (dateString === tomorrow.toISOString().split('T')[0]) return 'Tomorrow'
     return date.toLocaleDateString()
   }
@@ -131,7 +134,7 @@ function App() {
             className={filter === 'due-today' ? 'filter-btn active' : 'filter-btn'}
             onClick={() => setFilter('due-today')}
           >
-            Due Today ({tasks.filter(t => t.dueDate === getTodayString()).length})
+            Due Today ({tasks.filter(t => t.dueDate === todayString).length})
           </button>
         </div>
 
@@ -145,13 +148,13 @@ function App() {
               <div 
                 key={task.id} 
                 className={`task-item ${task.completed ? 'completed' : ''}`}
-                onMouseEnter={() => handleTaskHover(task)} // BUG 3: This will cause an error
+                onMouseEnter={() => handleTaskHover(task)} // FIXED: Now safely logs task info
               >
                 <div className="task-checkbox">
                   <input 
                     type="checkbox" 
                     checked={task.completed}
-                    onChange={() => markComplete(task.id)} // BUG 2: Won't update UI
+                    onChange={() => markComplete(task.id)} // FIXED: Now updates UI
                   />
                 </div>
                 <div className="task-content">
